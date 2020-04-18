@@ -1,6 +1,6 @@
 from chatbot import Chatbot
 
-Bot = Chatbot("Felipe")
+Bot = Chatbot("Javis")
 
 while True:
 	frase = Bot.escutar()

@@ -1,29 +1,46 @@
 import json
+import sys, os
+import subprocess as s
 
 class Chatbot():
 	def __init__(self, nome):
-		memoria = open(nome+'.json','r')
+		try:
+			memoria = open(nome+'.json','r')
+		except FileNotFoundError:
+			memoria = open(nome+'.json','w')
+			memoria.write('["Isaias"]')
+			memoria.close()
+			memoria = open(nome+'.json','r')
 		self.nome = nome
 		self.conhecidos = json.load(memoria)
 		memoria.close()
 		self.historico = []
+		self.frases = {'oi':'Ola, qual o seu nome?','tchau':'tchau'}
 
 	def escutar(self):
 		frase = input('> ')
 		frase = frase.lower()
-		frase = frase.replace('e','eh')
+		frase = frase.replace('é','eh')
 		return frase
 
-	def pensar(self, frase):
-		if frase == 'oi':
-			return 'Ola,qual o seu nome?'
-		if frase == 'tchau':
-			return 'Tchau!'
-		if self.historico[-1] == 'Ola,qual o seu nome?':
+	def pensar(self, frase):	
+		if frase in self.frases:
+			return self.frases[frase]
+		if frase == 'aprende':
+			chave = input('Digite a frase: ')
+			resp = input('Digite a resposta: ')
+			self.frases[chave] = resp
+			return 'Aprendido'
+		if self.historico[-1] == 'Ola, qual o seu nome?':
 			nome = self.pegaNome(frase)
 			frase = self.respondeNome(nome)
 			return frase
-		return 'Nao entendi'
+		try:
+			resp = str(eval(frase))
+			return resp
+		except:
+			pass
+		return 'Não entendi'
 
 	def pegaNome(self, nome):
 		if 'o meu nome eh ' in nome:
@@ -43,6 +60,17 @@ class Chatbot():
 		return frase+nome
 
 	def falar(self, frase):
-		print(frase)
+		if 'executa ' in frase:
+			plataforma = sys.platform
+			comando = frase.replace('executa ','')
+			if 'win' in plataforma:
+				os.startfile(comando)
+			if 'linux' in plataforma:
+				try:
+					s.Popen(comando)
+				except FileNotFoundError:
+					s.Popen(['xdg-open', comando])
+		else:
+			print(frase)
 		self.historico.append(frase)
 

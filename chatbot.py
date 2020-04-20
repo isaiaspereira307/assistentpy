@@ -8,17 +8,20 @@ class Chatbot():
 			memoria = open(nome+'.json','r')
 		except FileNotFoundError:
 			memoria = open(nome+'.json','w')
-			memoria.write('["Isaias"]')
+			memoria.write('[["Isaias"], {"oi":"Ola, qual o seu nome?","tchau":"tchau"}]')
 			memoria.close()
 			memoria = open(nome+'.json','r')
 		self.nome = nome
-		self.conhecidos = json.load(memoria)
+		self.conhecidos, self.frases = json.load(memoria)
 		memoria.close()
-		self.historico = []
-		self.frases = {'oi':'Ola, qual o seu nome?','tchau':'tchau'}
+		self.historico = [None,]
 
-	def escutar(self):
-		frase = input('> ')
+	def escutar(self, frase=None):
+		if frase == None:
+			frase = input('> ')
+		frase = str(frase)
+		if 'executar ' in frase:
+			return frase
 		frase = frase.lower()
 		frase = frase.replace('é','eh')
 		return frase
@@ -27,14 +30,21 @@ class Chatbot():
 		if frase in self.frases:
 			return self.frases[frase]
 		if frase == 'aprende':
-			chave = input('Digite a frase: ')
-			resp = input('Digite a resposta: ')
-			self.frases[chave] = resp
-			return 'Aprendido'
-		if self.historico[-1] == 'Ola, qual o seu nome?':
+			return 'Digite a frase: '
+		# Responde frases que depende o historico
+		ultimaFrase = self.historico[-1]
+		if ultimaFrase == 'Ola, qual o seu nome?':
 			nome = self.pegaNome(frase)
 			frase = self.respondeNome(nome)
 			return frase
+		if ultimaFrase == 'Digite a frase: ':
+			self.chave = frase
+			return 'Digite a resposta: '
+		if ultimaFrase == 'Digite a resposta: ':
+			resp = frase
+			self.frases[self.chave] = resp
+			self.gravaMemoria()
+			return 'Aprendido!'
 		try:
 			resp = str(eval(frase))
 			return resp
@@ -54,20 +64,23 @@ class Chatbot():
 		else:
 			frase = 'Muito prazer '
 			self.conhecidos.append(nome)
-			memoria = open(self.nome+'.json','w')
-			json.dump(self.conhecidos,memoria)
-			memoria.close()
+			self.gravaMemoria()
 		return frase+nome
 
+	def gravaMemoria(self):
+		memoria = open(self.nome+'.json','w')
+		json.dump([self.conhecidos,self.frases],memoria)
+		memoria.close()
+
 	def falar(self, frase):
-		if 'executa ' in frase:
+		if 'executar ' in frase:
 			plataforma = sys.platform
-			comando = frase.replace('executa ','')
+			comando = frase.replace('executar ','')
 			if 'win' in plataforma:
 				os.startfile(comando)
 			if 'linux' in plataforma:
 				try:
-					s.Popen(comando)
+					s.Popen(comando.lower())
 				except FileNotFoundError:
 					s.Popen(['xdg-open', comando])
 		else:
